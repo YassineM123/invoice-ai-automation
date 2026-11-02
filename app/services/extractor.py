@@ -5,6 +5,7 @@ import json
 import logging
 import mimetypes
 import re
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -305,6 +306,10 @@ def extract_document(path: Path) -> ExtractedDocument:
 
 
 def extract_from_free_text(text: str) -> ExtractedDocument:
-    temp = settings.upload_path / "free_text_document.txt"
+    # One file per request: two clients sending at the same time must never read each other's text.
+    temp = settings.upload_path / f"free_text_{uuid.uuid4().hex}.txt"
     temp.write_text(text, encoding="utf-8")
-    return extract_document(temp)
+    try:
+        return extract_document(temp)
+    finally:
+        temp.unlink(missing_ok=True)

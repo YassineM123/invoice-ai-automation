@@ -91,7 +91,7 @@ def test_allowed_chats(bot_config):
     assert bot.is_chat_allowed("99999") is True
     assert bot.is_chat_allowed("11111") is False
 
-    # When allowed_chat_ids is empty, any chat is allowed
+    # When allowed_chat_ids is empty, nobody is allowed and the bot refuses to start
     open_config = TelegramBotConfig(
         bot_token="fake",
         allowed_chat_ids=set(),
@@ -102,7 +102,25 @@ def test_allowed_chats(bot_config):
         generated_dir=bot_config.generated_dir,
     )
     open_bot = TelegramBot(open_config, api_client=FakeApiClient())
-    assert open_bot.is_chat_allowed("11111") is True
+    assert open_bot.is_chat_allowed("11111") is False
+    with pytest.raises(RuntimeError, match="TELEGRAM_ALLOWED_CHAT_IDS"):
+        open_config.validate()
+
+
+def test_downloaded_file_name_cannot_escape_download_dir(bot_config):
+    bot = TelegramBot(bot_config, api_client=FakeApiClient())
+    get_file = MagicMock(json=MagicMock(return_value={"ok": True, "result": {"file_path": "documents/file_1.pdf"}}))
+    content = MagicMock(content=b"data")
+    bot.session.get = MagicMock(side_effect=[get_file, content])
+    path = bot.download_telegram_file("abc", "../../../app/main.py")
+    assert path.parent == bot_config.download_dir
+    assert path.suffix == ".py" and ".." not in path.name
+
+
+def test_errors_never_leak_the_bot_token(bot_config):
+    bot = TelegramBot(bot_config, api_client=FakeApiClient())
+    error = Exception(f"404 for url https://api.telegram.org/bot{bot_config.bot_token}/getUpdates")
+    assert bot_config.bot_token not in bot._redact(error)
 
 
 def test_process_start_command(bot_config):

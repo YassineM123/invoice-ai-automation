@@ -22,4 +22,4 @@ def save_json(data: dict[str, Any], filename: str) -> Path:
 
 
 def public_url(path: Path) -> str:
-    return f"{settings.app_base_url}/outputs/{path.name}"
+    return f"{settings.app_base_url}/outputs/{path.relative_to(settings.output_path).as_posix()}"

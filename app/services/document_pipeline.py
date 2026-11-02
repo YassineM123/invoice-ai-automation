@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import secrets
 import shutil
 import uuid
 from pathlib import Path
@@ -37,6 +38,11 @@ def process_extracted_document(doc: ExtractedDocument) -> CorrectedDocument:
     status = DocumentStatus.pending_confirmation if missing_fields or doc.uncertain_fields else DocumentStatus.ready
     # The number may come from the user or the AI ("../../etc/passwd"): keep only safe filename characters.
     base_name = re.sub(r"[^A-Za-z0-9_-]+", "_", f"{doc.document_type.value}_{doc.number}").strip("_") or "document"
+    # /outputs is public: an unguessable folder per document, so nobody can download
+    # other clients' invoices by trying FAC-2026-0001, FAC-2026-0002 ...
+    folder = secrets.token_hex(16)
+    (settings.output_path / folder).mkdir(parents=True, exist_ok=True)
+    base_name = f"{folder}/{base_name}"
 
     pdf_path = generate_pdf(doc, company, f"{base_name}.pdf")
     docx_path = generate_docx(doc, company, f"{base_name}.docx")

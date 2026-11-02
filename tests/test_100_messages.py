@@ -163,13 +163,15 @@ def test_unsafe_document_number_cannot_escape_output_folder(monkeypatch):
 
     doc = _fallback_extract_from_text(MESSAGES["T086"])
     doc.number = "../../../../etc/passwd"
+    output = document_pipeline.settings.output_path
     captured = {}
-    monkeypatch.setattr(document_pipeline, "generate_pdf", lambda d, c, name: captured.setdefault("pdf", Path(name)))
-    monkeypatch.setattr(document_pipeline, "generate_docx", lambda d, c, name: captured.setdefault("docx", Path(name)))
-    monkeypatch.setattr(document_pipeline, "save_json", lambda data, name: captured.setdefault("json", Path(name)))
+    monkeypatch.setattr(document_pipeline, "generate_pdf", lambda d, c, name: captured.setdefault("pdf", output / name))
+    monkeypatch.setattr(document_pipeline, "generate_docx", lambda d, c, name: captured.setdefault("docx", output / name))
+    monkeypatch.setattr(document_pipeline, "save_json", lambda data, name: captured.setdefault("json", output / name))
     document_pipeline.process_extracted_document(doc)
     for path in captured.values():
-        assert path.name == str(path) and ".." not in str(path)
+        assert ".." not in str(path) and path.resolve().parent.parent == output.resolve()
+    captured["pdf"].parent.rmdir()
 
 
 class _FakeApi:

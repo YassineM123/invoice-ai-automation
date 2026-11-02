@@ -3,8 +3,10 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import sys
 import time
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -88,6 +90,11 @@ class TelegramBotConfig:
             )
         if not self.api_base_url:
             raise RuntimeError("API_BASE_URL is required.")
+        if not self.allowed_chat_ids:
+            raise RuntimeError(
+                "TELEGRAM_ALLOWED_CHAT_IDS is empty: the bot would answer anyone. "
+                "Set your chat id(s) in .env (comma separated)."
+            )
 
 
 class TelegramBot:
@@ -108,9 +115,15 @@ class TelegramBot:
         self.conversation_manager = ConversationManager(self.api_client)
         self.state_store = TelegramStateStore(self.config.session_dir)
 
+    def _redact(self, exc: Exception) -> str:
+        """Telegram errors contain the request URL, and the URL contains the bot token."""
+        text = str(exc)
+        return text.replace(self.config.bot_token, "***") if self.config.bot_token else text
+
     def is_chat_allowed(self, chat_id: int | str, user_id: int | str | None = None) -> bool:
+        # Deny by default: with no allowed id configured, nobody can use the bot.
         if not self.config.allowed_chat_ids:
-            return True
+            return False
         str_chat_id = str(chat_id)
         str_user_id = str(user_id) if user_id is not None else ""
         return str_chat_id in self.config.allowed_chat_ids or str_user_id in self.config.allowed_chat_ids
@@ -136,7 +149,7 @@ class TelegramBot:
                 return []
             return data.get("result", [])
         except requests.RequestException as exc:
-            LOGGER.warning("Telegram polling error: %s", exc)
+            LOGGER.warning("Telegram polling error: %s", self._redact(exc))
             return []
 
     def send_message(self, chat_id: int | str, text: str) -> bool:
@@ -149,7 +162,7 @@ class TelegramBot:
             response.raise_for_status()
             return True
         except requests.RequestException as exc:
-            LOGGER.error("Failed to send message to chat %s: %s", chat_id, exc)
+            LOGGER.error("Failed to send message to chat %s: %s", chat_id, self._redact(exc))
             return False
 
     def send_document(self, chat_id: int | str, document_path: Path, caption: str = "") -> bool:
@@ -172,7 +185,7 @@ class TelegramBot:
                 LOGGER.info("Sent document %s to chat %s", document_path.name, chat_id)
                 return True
         except requests.RequestException as exc:
-            LOGGER.error("Failed to send document %s to %s: %s", document_path, chat_id, exc)
+            LOGGER.error("Failed to send document %s to %s: %s", document_path, chat_id, self._redact(exc))
             return False
 
     def download_telegram_file(self, file_id: str, suggested_name: str | None = None) -> Path | None:
@@ -186,9 +199,11 @@ class TelegramBot:
             remote_path = result["result"]["file_path"]
             download_url = f"{self.file_api_url}/{remote_path}"
 
-            file_ext = Path(remote_path).suffix or ".bin"
-            local_name = suggested_name or Path(remote_path).name or f"telegram_file_{file_id}{file_ext}"
-            local_path = self.config.download_dir / local_name
+            # Never trust the sender's file name ("../../app/main.py"): keep only a safe extension.
+            file_ext = Path(suggested_name or remote_path).suffix.lower()
+            if not re.fullmatch(r"\.[a-z0-9]{1,8}", file_ext):
+                file_ext = ".bin"
+            local_path = self.config.download_dir / f"telegram_{uuid.uuid4().hex}{file_ext}"
 
             file_res = self.session.get(download_url, timeout=60)
             file_res.raise_for_status()
@@ -196,7 +211,7 @@ class TelegramBot:
             LOGGER.info("Downloaded Telegram file %s to %s", file_id, local_path)
             return local_path
         except requests.RequestException as exc:
-            LOGGER.error("Failed downloading telegram file %s: %s", file_id, exc)
+            LOGGER.error("Failed downloading telegram file %s: %s", file_id, self._redact(exc))
             return None
 
     def process_message(self, message: dict[str, Any]) -> None:
@@ -258,8 +273,8 @@ class TelegramBot:
                 reply_text = "Veuillez envoyer un texte décrivant la prestation ou un document (PDF, image, texte)."
 
         except Exception as exc:
-            LOGGER.exception("Error processing message %s from chat %s: %s", message_id, chat_id, exc)
-            reply_text = f"Une erreur s'est produite lors du traitement : {exc}"
+            LOGGER.error("Error processing message %s from chat %s: %s", message_id, chat_id, self._redact(exc))
+            reply_text = "Une erreur s'est produite lors du traitement. Veuillez reessayer."
 
         self.state_store.save(chat_id, state)
 
@@ -300,7 +315,7 @@ class TelegramBot:
                 print("\nTelegram bot stopped.")
                 break
             except Exception as exc:
-                LOGGER.exception("Unexpected error in Telegram polling loop: %s", exc)
+                LOGGER.error("Unexpected error in Telegram polling loop: %s", self._redact(exc))
                 time.sleep(3)
 
 

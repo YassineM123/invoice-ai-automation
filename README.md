@@ -126,9 +126,25 @@ Le bot Telegram est beaucoup plus stable et simple que WhatsApp Web : aucune ses
 
 ```env
 TELEGRAM_BOT_TOKEN="123456789:ABCdefGh..."
-# Optionnel: limitez l'accès à votre ID Telegram uniquement (séparés par des virgules)
-TELEGRAM_ALLOWED_CHAT_IDS=""
+# Obligatoire: vos ID Telegram autorisés (séparés par des virgules).
+# Sans ID, le bot refuse de démarrer (sinon n'importe qui pourrait l'utiliser).
+TELEGRAM_ALLOWED_CHAT_IDS="123456789"
 ```
+
+Pour connaître votre ID, envoyez un message à `@userinfobot` sur Telegram.
+
+### Sécurité
+
+```env
+# Clé partagée entre l'API et les bots (en-tête X-API-Key sur /documents/*).
+API_KEY="une-longue-valeur-aleatoire"
+# Webhook WhatsApp Cloud API: token de vérification (pas "change-me") et App Secret Meta.
+VERIFY_TOKEN="un-token-a-vous"
+WHATSAPP_APP_SECRET="app-secret-de-votre-app-meta"
+```
+
+Les PDF, Word et rapports générés sont placés dans un dossier aléatoire (`/outputs/<32 caractères>/...`),
+impossible à deviner à partir du numéro de facture.
 
 ### Lancement du Bot Telegram
 

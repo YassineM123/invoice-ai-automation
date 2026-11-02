@@ -9,7 +9,10 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-4o-mini"
     default_vat_rate: float = 20.0
     default_payment_days: int = 30
+    # When set, every /documents/* call must send it in the X-API-Key header.
+    api_key: str = ""
     verify_token: str = "change-me"
+    whatsapp_app_secret: str = ""
     whatsapp_token: str = ""
     whatsapp_phone_number_id: str = ""
     whatsapp_enabled: bool = False
@@ -42,6 +45,11 @@ class Settings(BaseSettings):
     @property
     def output_path(self) -> Path:
         return Path(self.output_dir)
+
+    @property
+    def counter_file(self) -> Path:
+        # Next to the outputs, never inside the publicly served /outputs folder.
+        return self.output_path.parent / "counters.json"
 
 
 settings = Settings()

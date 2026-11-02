@@ -7,6 +7,8 @@ from urllib.parse import urljoin, urlparse, urlunparse
 
 import requests
 
+from app.config import settings
+
 
 LOGGER = logging.getLogger("document_api_client")
 
@@ -17,6 +19,8 @@ class DocumentApiClient:
         self.download_dir = download_dir
         self.download_dir.mkdir(parents=True, exist_ok=True)
         self.session = requests.Session()
+        if settings.api_key:
+            self.session.headers["X-API-Key"] = settings.api_key
 
     def create_from_text(self, text: str) -> dict:
         response = self.session.post(

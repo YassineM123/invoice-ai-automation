@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+import hashlib
+import hmac
+import json
+import logging
+import secrets
+
 from fastapi import APIRouter, Request, Response
 
 from app.config import settings
@@ -7,6 +13,8 @@ from app.services.document_pipeline import process_text
 from app.services.whatsapp import send_welcome, send_whatsapp_text
 
 router = APIRouter(prefix="/whatsapp", tags=["whatsapp"])
+LOGGER = logging.getLogger("whatsapp_webhook")
+INSECURE_VERIFY_TOKENS = {"", "change-me"}
 
 
 @router.get("/webhook")
@@ -15,15 +23,30 @@ def verify_webhook(request: Request):
     mode = params.get("hub.mode")
     token = params.get("hub.verify_token")
     challenge = params.get("hub.challenge")
-    if mode == "subscribe" and token == settings.verify_token:
+    if settings.verify_token in INSECURE_VERIFY_TOKENS:
+        LOGGER.error("VERIFY_TOKEN is not configured: webhook verification refused.")
+        return Response(status_code=403)
+    if mode == "subscribe" and secrets.compare_digest(token or "", settings.verify_token):
         return Response(content=challenge or "", media_type="text/plain")
     return Response(status_code=403)
 
 
+def _valid_signature(body: bytes, signature: str | None) -> bool:
+    """Meta signs every webhook call with the app secret (X-Hub-Signature-256: sha256=<hex>)."""
+    if not settings.whatsapp_app_secret or not signature or not signature.startswith("sha256="):
+        return False
+    expected = hmac.new(settings.whatsapp_app_secret.encode(), body, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(signature.removeprefix("sha256="), expected)
+
+
 @router.post("/webhook")
 async def receive_webhook(request: Request):
-    payload = await request.json()
+    body = await request.body()
+    if not _valid_signature(body, request.headers.get("X-Hub-Signature-256")):
+        LOGGER.warning("Rejected WhatsApp webhook call with a missing or invalid signature.")
+        return Response(status_code=403)
     try:
+        payload = json.loads(body)
         value = payload["entry"][0]["changes"][0]["value"]
         messages = value.get("messages", [])
         if not messages:
@@ -55,6 +78,7 @@ async def receive_webhook(request: Request):
                 from_phone,
                 "Document recu. Pour cette version MVP, envoyez le fichier via l'API ou envoyez les informations en texte.",
             )
-    except Exception as exc:
-        return {"ok": False, "error": str(exc)}
+    except Exception:
+        LOGGER.exception("WhatsApp webhook processing failed.")
+        return {"ok": False}
     return {"ok": True}
