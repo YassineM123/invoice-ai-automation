@@ -1,0 +1,76 @@
+services:
+  api:
+    build:
+      context: .
+      target: api
+    container_name: invoice-ai-api
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:8000}
+      API_BASE_URL: http://api:8000
+      UPLOAD_DIR: /app/runtime/uploads
+      OUTPUT_DIR: /app/runtime/outputs
+    volumes:
+      - ./runtime:/app/runtime
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5).read()"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  telegram-bot:
+    build:
+      context: .
+      target: telegram-bot
+    container_name: invoice-ai-telegram-bot
+    command: python -m app.bot.telegram_bot
+    depends_on:
+      api:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_ALLOWED_CHAT_IDS: ${TELEGRAM_ALLOWED_CHAT_IDS:-}
+      API_BASE_URL: http://api:8000
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:8000}
+      TELEGRAM_DOWNLOAD_DIR: /app/runtime/telegram-downloads
+      TELEGRAM_SESSION_DIR: /app/runtime/telegram-sessions
+      UPLOAD_DIR: /app/runtime/uploads
+      OUTPUT_DIR: /app/runtime/outputs
+    volumes:
+      - ./runtime:/app/runtime
+    restart: unless-stopped
+
+  whatsapp-bot:
+    build:
+      context: .
+      target: whatsapp-bot
+    container_name: invoice-ai-whatsapp-bot
+    command: python -m app.bot.whatsapp_web_bot
+    depends_on:
+      api:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      WHATSAPP_WEB_ENABLED: ${WHATSAPP_WEB_ENABLED:-true}
+      API_BASE_URL: http://api:8000
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:8000}
+      WHATSAPP_SESSION_DIR: ${WHATSAPP_SESSION_DIR:-/app/runtime/whatsapp-session}
+      WHATSAPP_DOWNLOAD_DIR: ${WHATSAPP_DOWNLOAD_DIR:-/app/runtime/whatsapp-downloads}
+      WHATSAPP_ALLOW_GROUPS: ${WHATSAPP_ALLOW_GROUPS:-false}
+      WHATSAPP_POLL_INTERVAL_SECONDS: ${WHATSAPP_POLL_INTERVAL_SECONDS:-3}
+      WHATSAPP_HEADLESS: ${WHATSAPP_HEADLESS:-true}
+      WHATSAPP_QR_SCREENSHOT_PATH: ${WHATSAPP_QR_SCREENSHOT_PATH:-/app/runtime/whatsapp-qr-login.png}
+      UPLOAD_DIR: /app/runtime/uploads
+      OUTPUT_DIR: /app/runtime/outputs
+    volumes:
+      - ./runtime:/app/runtime
+    stdin_open: true
+    tty: true

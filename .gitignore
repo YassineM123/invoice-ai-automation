@@ -1,0 +1,14 @@
+# Secrets
+.env
+
+# Python
+.venv/
+.venv312/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Runtime data (WhatsApp/Telegram sessions, generated documents, uploads)
+runtime/
+storage/uploads/
+storage/outputs/

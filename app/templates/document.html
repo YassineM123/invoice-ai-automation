@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>{{ doc.document_type.value|capitalize }} {{ doc.number }}</title>
+  <style>
+    {% include "style.css" %}
+  </style>
+</head>
+<body>
+  <!-- Top Decorative Shapes -->
+  <div class="top-decorations">
+    <div class="stripes-left">
+      <span class="stripe s1"></span>
+      <span class="stripe s2"></span>
+    </div>
+    <div class="stripes-right">
+      <span class="stripe s3"></span>
+      <span class="stripe s4"></span>
+      <span class="stripe s5"></span>
+      <span class="stripe s6"></span>
+    </div>
+  </div>
+
+  <!-- Header: Title and Company/Logo -->
+  <header class="header">
+    <div class="title-block">
+      <h1 class="doc-title">{{ doc.document_type.value|capitalize }}</h1>
+      <div class="company-sub">{{ company.name }}</div>
+      <div class="doc-number">N° {{ doc.number }}</div>
+    </div>
+    <div class="logo-block">
+      {% if company.logo_path %}
+        <img class="logo-img" src="{{ company.logo_path }}" alt="{{ company.name }}">
+      {% else %}
+        <div class="logo-text">
+          <div class="logo-monogram">AD</div>
+          <div class="logo-sub">{{ company.name }}</div>
+          <div class="logo-city">PARIS</div>
+        </div>
+      {% endif %}
+    </div>
+  </header>
+
+  <!-- Meta Info: Address & Date -->
+  <div class="meta-bar">
+    <div class="meta-address">{{ company.address if company.address != "à confirmer" else "26 rue Damrémont 75018 Paris" }}</div>
+    <div class="meta-date">{{ doc.date }}</div>
+  </div>
+  <div class="dotted-divider"></div>
+
+  <!-- Client & Worksite Details -->
+  <section class="client-section">
+    <div class="client-line"><span class="label">Adresse :</span> <span class="val">{{ doc.client_info.address }}</span></div>
+    <div class="client-line"><span class="label">Client :</span> <span class="val">{{ doc.client_info.name }}</span></div>
+    {% if doc.worksite_address and doc.worksite_address != doc.client_info.address and doc.worksite_address != "à confirmer" %}
+      <div class="client-line"><span class="label">Chantier :</span> <span class="val">{{ doc.worksite_address }}</span></div>
+    {% endif %}
+  </section>
+
+  <!-- Polite Introductory Phrase -->
+  <div class="intro-quote">
+    Chaque maison a son histoire, et nous serions honorés de contribuer à écrire la vôtre. Ce {{ doc.document_type.value }} n’est pas seulement une estimation, mais une promesse de <span class="highlight">qualité</span>, de <span class="highlight">sérieux</span> et d’<span class="highlight">attention</span> portée à chaque détail de votre projet de rénovation.
+  </div>
+
+  <!-- Items Table -->
+  <table class="services-table">
+    <thead>
+      <tr>
+        <th class="th-service">Services</th>
+        <th class="th-unit">Forfait</th>
+        <th class="th-price">Prix(HT) €</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in doc.items %}
+      <tr class="service-row">
+        <td class="td-desc">
+          {% set new_lot = item.group and (loop.first or doc.items[loop.index0 - 1].group != item.group) %}
+          {% if new_lot %}
+            <div class="lot-title">{{ item.group }}</div>
+          {% endif %}
+          {% set details = item.description.split('\n') %}
+          {% if item.title %}
+            <div class="item-title">{{ item.title }}</div>
+          {% elif not item.group %}
+            {# No lot and no title: the first line of the description is the heading #}
+            <div class="lot-title">{{ details[0] }}</div>
+            {% set details = details[1:] %}
+          {% endif %}
+          {% for detail in details %}
+            <div class="item-sub">{{ detail }}</div>
+          {% endfor %}
+        </td>
+        <td class="td-unit">
+          {% if item.quantity and item.quantity > 1 %}
+            {{ item.quantity|int if item.quantity.is_integer() else item.quantity }}
+          {% else %}
+            Ens
+          {% endif %}
+        </td>
+        <td class="td-price">
+          {{ "%.2f"|format(item.total_ht) if item.total_ht is not none else ("%.2f"|format(item.unit_price_ht) if item.unit_price_ht is not none else "à confirmer") }} €
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Totals Section -->
+  <section class="totals-section">
+    <div class="total-ttc-banner">
+      <span class="ttc-label">Total TTC :</span>
+      <span class="ttc-amount">{{ "%.2f"|format(doc.totals.total_ttc) if doc.totals.total_ttc is not none else "à confirmer" }} € TTC</span>
+    </div>
+
+    <div class="breakdown-card">
+      <div class="breakdown-row">
+        <span>Sous-total HT :</span>
+        <span>{{ "%.2f"|format(doc.totals.subtotal_ht) if doc.totals.subtotal_ht is not none else "à confirmer" }} €</span>
+      </div>
+      <div class="breakdown-row">
+        {% set vat_rates = doc.items|map(attribute="vat_rate")|reject("none")|unique|list %}
+        <span>TVA{% if vat_rates|length == 1 %} ({{ vat_rates[0] }}%){% endif %} :</span>
+        <span>{{ "%.2f"|format(doc.totals.vat_total) if doc.totals.vat_total is not none else "à confirmer" }} €</span>
+      </div>
+      {% if doc.totals.discount_ht and doc.totals.discount_ht > 0 %}
+      <div class="breakdown-row">
+        <span>Remise HT :</span>
+        <span>-{{ "%.2f"|format(doc.totals.discount_ht) }} €</span>
+      </div>
+      {% endif %}
+      {% if doc.totals.deposit_ttc and doc.totals.deposit_ttc > 0 %}
+      <div class="breakdown-row">
+        <span>Acompte versé TTC :</span>
+        <span>{{ "%.2f"|format(doc.totals.deposit_ttc) }} €</span>
+      </div>
+      <div class="breakdown-row balance-row">
+        <span>Solde restant dû :</span>
+        <span>{{ "%.2f"|format(doc.totals.balance_due_ttc) if doc.totals.balance_due_ttc is not none else "à confirmer" }} € TTC</span>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <!-- Signoff / Acceptance -->
+  <div class="signature-block">
+    <p class="sign-instruction">à retourner daté et signé</p>
+    <div class="sign-box">
+      <span>Bon pour accord, le : ________________</span>
+      <span class="sign-space">Signature du client :</span>
+    </div>
+  </div>
+
+  <!-- Legal Footer -->
+  <footer class="footer">
+    {% if doc.notes %}
+      <p>{{ doc.notes }}</p>
+    {% endif %}
+    <p>{{ company.name }} — SIRET : {{ company.siret }} | TVA : {{ company.vat_number }} | {{ company.email }} | {{ company.phone }}</p>
+    {% if company.insurance_decennale != "à confirmer" %}
+      <p>Assurance Décennale : {{ company.insurance_decennale }}</p>
+    {% endif %}
+    <p>{{ company.late_penalties }}</p>
+  </footer>
+</body>
+</html>

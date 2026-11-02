@@ -1,0 +1,381 @@
+@page {
+  size: A4;
+  margin: 14mm 16mm 16mm 16mm;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #2b353e;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+
+/* Decorative stripes */
+.top-decorations {
+  position: absolute;
+  top: -14mm;
+  left: -16mm;
+  right: -16mm;
+  height: 25mm;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.stripes-left {
+  position: absolute;
+  top: 0;
+  left: 20px;
+  display: flex;
+  gap: 8px;
+}
+
+.stripes-left .s1 {
+  width: 14px;
+  height: 48px;
+  background-color: #6fb6b0;
+  transform: skew(-15deg);
+}
+
+.stripes-left .s2 {
+  width: 14px;
+  height: 70px;
+  background-color: #92cdca;
+  transform: skew(-15deg);
+}
+
+.stripes-right {
+  position: absolute;
+  top: 0;
+  right: 60px;
+  display: flex;
+  gap: 10px;
+}
+
+.stripes-right .stripe {
+  width: 12px;
+  background-color: #4fa8a3;
+  transform: skew(-15deg);
+}
+
+.stripes-right .s3 { height: 60px; background-color: #79bfba; }
+.stripes-right .s4 { height: 75px; background-color: #4fa8a3; }
+.stripes-right .s5 { height: 68px; background-color: #3b91a4; }
+.stripes-right .s6 { height: 80px; background-color: #2e7a8f; }
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-top: 15px;
+  margin-bottom: 12px;
+}
+
+.title-block .doc-title {
+  font-size: 38px;
+  font-weight: 300;
+  letter-spacing: 0.5px;
+  color: #1a232b;
+  margin: 0;
+  line-height: 1;
+}
+
+.title-block .company-sub {
+  font-size: 13px;
+  color: #6fb6b0;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-top: 5px;
+}
+
+.title-block .doc-number {
+  font-size: 12px;
+  color: #8c9ba5;
+  margin-top: 3px;
+}
+
+.logo-block {
+  text-align: right;
+}
+
+.logo-img {
+  max-width: 130px;
+  max-height: 75px;
+  object-fit: contain;
+}
+
+.logo-text {
+  display: inline-block;
+  text-align: center;
+}
+
+.logo-monogram {
+  font-size: 28px;
+  font-weight: 800;
+  color: #c5a059;
+  letter-spacing: 2px;
+  line-height: 1;
+}
+
+.logo-sub {
+  font-size: 11px;
+  font-weight: 700;
+  color: #555;
+  letter-spacing: 1px;
+  margin-top: 2px;
+}
+
+.logo-city {
+  font-size: 9px;
+  font-weight: 500;
+  color: #999;
+  letter-spacing: 2px;
+}
+
+/* Meta Bar */
+.meta-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 15px;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.meta-address {
+  color: #55a29e;
+  font-weight: 500;
+}
+
+.meta-date {
+  color: #333;
+  font-weight: 500;
+}
+
+.dotted-divider {
+  border-top: 1px dashed #d1e5e3;
+  margin-bottom: 16px;
+}
+
+/* Client Section */
+.client-section {
+  margin-bottom: 18px;
+}
+
+.client-line {
+  font-size: 14px;
+  margin: 4px 0;
+}
+
+.client-line .label {
+  font-weight: 700;
+  color: #1a232b;
+  display: inline-block;
+  min-width: 80px;
+}
+
+.client-line .val {
+  color: #2b353e;
+}
+
+/* Intro quote */
+.intro-quote {
+  font-size: 12px;
+  font-style: italic;
+  color: #4b5563;
+  line-height: 1.6;
+  margin: 18px 0 20px 0;
+  padding: 0;
+}
+
+.intro-quote .highlight {
+  color: #3b91a4;
+  font-weight: 600;
+}
+
+/* Services Table */
+.services-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+}
+
+.services-table th {
+  background-color: #5eaab2;
+  color: #ffffff;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.services-table .th-service {
+  width: 65%;
+}
+
+.services-table .th-unit {
+  width: 15%;
+  text-align: center;
+}
+
+.services-table .th-price {
+  width: 20%;
+  text-align: right;
+}
+
+.services-table td {
+  padding: 14px 14px;
+  border-bottom: 1px solid #e5eef0;
+  vertical-align: top;
+}
+
+.service-row:last-child td {
+  border-bottom: 1px solid #5eaab2;
+}
+
+.lot-title {
+  font-weight: 600;
+  color: #111827;
+  font-size: 19px;
+  margin-bottom: 4px;
+}
+
+.item-title {
+  font-weight: 700;
+  color: #111827;
+  font-size: 13px;
+  margin: 2px 0 6px;
+}
+
+.item-sub {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #1f2937;
+  line-height: 1.4;
+}
+
+.td-unit {
+  text-align: center;
+  color: #1f2937;
+  font-weight: 500;
+}
+
+.td-price {
+  text-align: right;
+  color: #111827;
+  font-weight: 700;
+  font-size: 13.5px;
+}
+
+/* Totals Section */
+.totals-section {
+  margin-top: 15px;
+  margin-bottom: 25px;
+  page-break-inside: avoid;
+}
+
+.total-ttc-banner {
+  border-top: 2px solid #5eaab2;
+  border-bottom: 2px solid #5eaab2;
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f7fbfb;
+  margin-bottom: 15px;
+}
+
+.total-ttc-banner .ttc-label {
+  font-size: 17px;
+  font-weight: 700;
+  color: #3b91a4;
+  font-style: italic;
+}
+
+.total-ttc-banner .ttc-amount {
+  font-size: 19px;
+  font-weight: 800;
+  color: #3b91a4;
+}
+
+.breakdown-card {
+  width: 280px;
+  margin-left: auto;
+  border: 1px solid #e1eded;
+  border-radius: 6px;
+  padding: 10px 14px;
+  background-color: #ffffff;
+}
+
+.breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+  color: #4b5563;
+  margin: 5px 0;
+}
+
+.breakdown-row span:last-child {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.balance-row {
+  border-top: 1px solid #e5eef0;
+  padding-top: 6px;
+  margin-top: 6px;
+  color: #111827;
+  font-weight: 700;
+}
+
+/* Signature Block */
+.signature-block {
+  margin-top: 35px;
+  margin-bottom: 40px;
+  page-break-inside: avoid;
+}
+
+.sign-instruction {
+  font-size: 12.5px;
+  font-style: italic;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.sign-box {
+  border: 1px dashed #bcdad8;
+  border-radius: 6px;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  background-color: #fcfefe;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.sign-space {
+  margin-right: 40px;
+}
+
+/* Legal Footer */
+.footer {
+  margin-top: 30px;
+  border-top: 1px solid #e5eef0;
+  padding-top: 10px;
+  font-size: 10px;
+  color: #9ca3af;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.footer p {
+  margin: 2px 0;
+}

@@ -1,0 +1,7 @@
+Devis pour Ahmed Ben Ali
+Chantier: 15 rue Victor Hugo, 75016 Paris
+Prestation: peinture appartement 2 chambres
+Quantité: 1
+Prix HT: 950
+TVA: 10%
+Paiement par virement
